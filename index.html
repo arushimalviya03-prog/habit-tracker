@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Habit Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --lavender: #c5a7ff;
+      --lavender-soft: #f4eeff;
+      --black: #111111;
+      --white: #ffffff;
+      --grey: #888888;
+      --border-soft: #e4e4ec;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #f8f5ff 0, #f4f4f7 40%, #ededf2 100%);
+      color: var(--black);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app {
+      background: var(--white);
+      width: 100%;
+      max-width: 420px;
+      border-radius: 24px;
+      padding: 20px 20px 18px;
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(17, 17, 17, 0.03);
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title-block h1 {
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .title-block p {
+      font-size: 0.8rem;
+      color: var(--grey);
+    }
+
+    .pill-date {
+      font-size: 0.78rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--lavender-soft);
+      color: var(--black);
+      border: 1px solid rgba(197, 167, 255, 0.4);
+      white-space: nowrap;
+    }
+
+    .progress-card {
+      background: #faf9ff;
+      border-radius: 16px;
+      padding: 10px 12px 12px;
+      border: 1px solid rgba(197, 167, 255, 0.5);
+      margin-bottom: 16px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+    }
+
+    .progress-label {
+      color: var(--grey);
+    }
+
+    .progress-number {
+      font-weight: 550;
+      color: var(--black);
+    }
+
+    .progress-bar-outer {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(17, 17, 17, 0.06);
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--lavender), #9d7bff);
+      transition: width 0.2s ease-out;
+    }
+
+    .habit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .habit {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: #fcfcff;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+    }
+
+    .habit:hover {
+      border-color: rgba(197, 167, 255, 0.9);
+      background: var(--lavender-soft);
+      transform: translateY(-1px);
+    }
+
+    .habit-label {
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
+
+    .habit input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--lavender);
+    }
+
+    .footer-note {
+      font-size: 0.7rem;
+      color: var(--grey);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        border-radius: 20px;
+        padding: 18px 16px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="title-block">
+        <h1>My Habit Tracker</h1>
+        <p>Tick what you’ve done today. That’s it.</p>
+      </div>
+      <div class="pill-date" id="today-pill"></div>
+    </header>
+
+    <section class="progress-card">
+      <div class="progress-top">
+        <span class="progress-label">Today&apos;s progress</span>
+        <span class="progress-number" id="progress-text">0 / 0</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progress-bar"></div>
+      </div>
+    </section>
+
+    <section class="habit-list" id="habit-list"></section>
+
+    <p class="footer-note">
+      Saved only in this browser. Clearing history may reset it.
+    </p>
+  </div>
+
+  <script>
+    // Edit your habit names here
+    const habits = [
+      "Drink 2L water",
+      "Read 10 pages",
+      "Move for 20 minutes",
+      "No junk food",
+      "Sleep before 11 PM"
+    ];
+
+    const today = new Date();
+    const todayKey = "habits-" + today.toISOString().slice(0, 10);
+    const saved = JSON.parse(localStorage.getItem(todayKey) || "{}");
+
+    const habitListEl = document.getElementById("habit-list");
+    const progressTextEl = document.getElementById("progress-text");
+    const progressBarEl = document.getElementById("progress-bar");
+    const todayPillEl = document.getElementById("today-pill");
+
+    const options = { weekday: "short", month: "short", day: "numeric" };
+    todayPillEl.textContent = today.toLocaleDateString(undefined, options);
+
+    function updateProgress() {
+      const total = habits.length;
+      const done = habits.filter(habit => saved[habit]).length;
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+      progressTextEl.textContent = `${done} / ${total}`;
+      progressBarEl.style.width = percent + "%";
+    }
+
+    habits.forEach(habit => {
+      const row = document.createElement("div");
+      row.className = "habit";
+
+      const label = document.createElement("span");
+      label.className = "habit-label";
+      label.textContent = habit;
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = !!saved[habit];
+
+      checkbox.addEventListener("change", () => {
+        saved[habit] = checkbox.checked;
+        localStorage.setItem(todayKey, JSON.stringify(saved));
+        updateProgress();
+      });
+
+      row.appendChild(label);
+      row.appendChild(checkbox);
+      habitListEl.appendChild(row);
+    });
+
+    updateProgress();
+  </script>
+</body>
+</html>
